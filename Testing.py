@@ -1,69 +1,136 @@
+from ioh import get_problem, ProblemClass
+from ioh import logger
+import sys
 import numpy as np
+import time
 
-# Function to calculate the autocorrelation of a binary sequence
-def autocorrelation(sequence):
-    n = len(sequence)
-    autocorr = np.correlate(sequence, sequence, mode='full')
-    return autocorr[n - 1:]
 
-# Function to generate a random binary sequence of a given length
-def generate_random_sequence(length):
-    return np.random.randint(2, size=length)
+# Declaration of problems to be tested.
+# We obtain an interface of the OneMax problem here.
+# om(x) return the fitness value of 'x'
+dimension = 50
+om = get_problem("LABS", dimension=dimension, instance=1, problem_class=ProblemClass.PBO)
+# We know the optimum of onemax
+optimum = dimension
 
-# Function to evaluate the fitness of a binary sequence (lower peak autocorrelation is better)
-def fitness(sequence):
-    autocorr = autocorrelation(sequence)
-    return -max(autocorr)  # We negate it because genetic algorithms maximize fitness
+# Create default logger compatible with IOHanalyzer
+# `root` indicates where the output files are stored.
+# `folder_name` is the name of the folder containing all output. You should compress the folder 'run' and upload it to IOHanalyzer.
+l = logger.Analyzer(root="data", 
+    folder_name="run", 
+    algorithm_name="genetic_algorithm", 
+    algorithm_info="The lab session of the evolutionary algorithm course in LIACS")
 
-# Function to perform one-point crossover between two parent sequences
-def one_point_crossover(parent1, parent2):
-    point = np.random.randint(1, len(parent1) - 1)
-    child1 = np.concatenate((parent1[:point], parent2[point:]))
-    child2 = np.concatenate((parent2[:point], parent1[point:]))
-    return child1, child2
+om.attach_logger(l)
 
-# Function to perform mutation by flipping a random bit in the sequence
-def mutate(sequence, mutation_rate):
-    for i in range(len(sequence)):
-        if np.random.rand() < mutation_rate:
-            sequence[i] = 1 - sequence[i]
-    return sequence
+# Parameters setting
+pop_size = 3
+tournament_k = 10
+mutation_rate = 0.02
+crossover_probability = 0.5
 
-# Genetic Algorithm to find a low autocorrelation binary sequence
-def genetic_algorithm(sequence_length, population_size, generations, mutation_rate):
-    population = [generate_random_sequence(sequence_length) for _ in range(population_size)]
 
-    for generation in range(generations):
-        # Evaluate the fitness of each sequence
-        fitness_scores = [fitness(seq) for seq in population]
+# Uniform Crossover
+def crossover(p1, p2):
+   if(np.random.uniform(0,1) < crossover_probability):
+        for i in range(len(p1)) :
+            if np.random.uniform(0,1) < 0.5:
+                t = p1[i]
+                p1[i] = p2[i]
+                p2[i] = t
 
-        # Select parents for crossover (higher fitness is better)
-        selected_indices = np.argsort(fitness_scores)[:population_size // 2]
-        parents = [population[i] for i in selected_indices]
+# Standard bit mutation using mutation rate p
+def mutation(p):
+    for i in range(len(p)) :
+        if np.random.uniform(0,1) < mutation_rate:
+            p[i] = 1 - p[i]
 
-        # Create the next generation through crossover and mutation
-        next_generation = []
-        while len(next_generation) < population_size:
-            parent1, parent2 = np.random.choice(parents, size=2, replace=False)
-            child1, child2 = one_point_crossover(parent1, parent2)
-            child1 = mutate(child1, mutation_rate)
-            child2 = mutate(child2, mutation_rate)
-            next_generation.extend([child1, child2])
 
-        population = next_generation
+def mating_seletion(parent, parent_f):
+    # Using the tournament selection
+    # select_parent = []
+    # for i in range(len(parent)) :
+    #     pre_select = np.random.choice(len(parent_f),tournament_k,replace = False)
+    #     max_f = sys.float_info.min
+    #     for p in pre_select:
+    #         if parent_f[p] > max_f:
+    #             index = p
+    #             max_f = parent_f[p]
+    #     select_parent.append(parent[index].copy())
+    # return select_parent
 
-    # Find the best sequence after the specified number of generations
-    best_sequence = max(population, key=fitness)
-    lowest_peak = -fitness(best_sequence)
+    # Using the proportional selection
 
-    return best_sequence, lowest_peak
+    # Plusing 0.001 to avoid dividing 0
+    f_min = min(parent_f)
+    f_sum = sum(parent_f) - (f_min - 0.001) * len(parent_f)
+    
+    rw = [(parent_f[0] - f_min + 0.001)/f_sum]
+    for i in range(1,len(parent_f)):
+        rw.append(rw[i-1] + (parent_f[i] - f_min + 0.001) / f_sum)
+    
+    select_parent = []
+    for i in range(len(parent)) :
+        r = np.random.uniform(0,1)
+        index = 0
+        # print(rw,r)
+        while(r > rw[index]) :
+            index = index + 1
+        
+        select_parent.append(parent[index].copy())
+    return select_parent
 
-# Example usage
-sequence_length = 20
-population_size = 100
-generations = 100
-mutation_rate = 0.01
+def genetic_algorithm(func, budget = None):
+    
+    # budget of each run: 10000
+    if budget is None:
+        budget = 10000
+    
+    f_opt = sys.float_info.min
+    x_opt = None
+    
+    parent = []
+    parent_f = []
+    for i in range(pop_size):
 
-best_sequence, lowest_peak = genetic_algorithm(sequence_length, population_size, generations, mutation_rate)
-print("Best Sequence:", best_sequence)
-print("Lowest Peak Autocorrelation:", lowest_peak)
+        # Initialization
+        parent.append(np.random.randint(2, size = func.meta_data.n_variables))
+        parent_f.append(func(parent[i]))
+        budget = budget - 1
+
+    while (f_opt < optimum and budget > 0):
+            
+        offspring = mating_seletion(parent,parent_f)
+
+        for i in range(0,pop_size - (pop_size%2),2) :
+            crossover(offspring[i], offspring[i+1])
+
+
+        for i in range(pop_size):
+            mutation(offspring[i])
+
+        parent = offspring.copy()
+        for i in range(pop_size) : 
+            parent_f[i] = func(parent[i])
+            budget = budget - 1
+            if parent_f[i] > f_opt:
+                    f_opt = parent_f[i]
+                    x_opt = parent[i].copy()
+            if f_opt >= optimum:
+                break
+        
+    # ioh function, to reset the recording status of the function.
+    func.reset()
+    print(f_opt,x_opt)
+    return f_opt, x_opt
+
+def main():
+    # We run the algorithm 20 independent times.
+    for _ in range(20):
+        genetic_algorithm(om)
+
+if __name__ == '__main__':
+  start = time.time()
+  main()
+  end = time.time()
+  print("The program takes %s seconds" % (end-start))
