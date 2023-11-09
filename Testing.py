@@ -84,7 +84,7 @@ def genetic_algorithm(func, budget = None):
     
     # budget of each run: 10000
     if budget is None:
-        budget = 10000
+        budget = 5000
     
     f_opt = sys.float_info.min
     x_opt = None
