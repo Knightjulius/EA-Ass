@@ -50,6 +50,7 @@ def studentnumber1_studentnumber2_GA(problem):
         # Initialization
         parent.append(np.random.randint(2, size = problem.meta_data.n_variables))
         parent_f.append(problem(parent[i]))
+        print(parent[i])
         
     # `problem.state.evaluations` counts the number of function evaluation automatically,
     # which is incremented by 1 whenever you call `problem(x)`.
@@ -81,7 +82,7 @@ def create_problem(fid: int):
     # `root` indicates where the output files are stored.
     # `folder_name` is the name of the folder containing all output. You should compress the folder 'run' and upload it to IOHanalyzer.
     l = logger.Analyzer(
-        root="data",  # the working directory in which a folder named `folder_name` (the next argument) will be created to store data
+        root="GAdata",  # the working directory in which a folder named `folder_name` (the next argument) will be created to store data
         folder_name="run",  # the folder name to which the raw performance data will be stored
         algorithm_name="genetic_algorithm",  # name of your algorithm
         algorithm_info="Practical assignment of the EA course",

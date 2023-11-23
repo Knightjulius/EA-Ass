@@ -23,7 +23,7 @@ optimum = 0
 # Create default logger compatible with IOHanalyzer
 # `root` indicates where the output files are stored.
 # `folder_name` is the name of the folder containing all output. You should compress the folder 'run' and upload it to IOHanalyzer.
-l = logger.Analyzer(root="data", 
+l = logger.Analyzer(root="WGdata", 
     folder_name="run", 
     algorithm_name="evolution strategy", 
     algorithm_info="The lab session of the evolutionary algorithm course in LIACS")
@@ -75,6 +75,7 @@ def evolution_strategy(func, budget = None):
     # Initialization and Evaluation
     parent,parent_sigma = initialization(mu_,func.meta_data.n_variables)
     parent_f = []
+    print(parent,parent_sigma)
     for i in range(mu_):
         parent_f.append(func(parent[i]))
         budget = budget - 1
