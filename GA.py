@@ -50,7 +50,7 @@ def studentnumber1_studentnumber2_GA(problem):
         # Initialization
         parent.append(np.random.randint(2, size = problem.meta_data.n_variables))
         parent_f.append(problem(parent[i]))
-        print(parent[i])
+        #print(parent[i])
         
     # `problem.state.evaluations` counts the number of function evaluation automatically,
     # which is incremented by 1 whenever you call `problem(x)`.
@@ -66,12 +66,12 @@ def studentnumber1_studentnumber2_GA(problem):
 
         for i in range(pop_size) : 
             parent_f[i] = problem(parent[i])
-            budget = budget - 1
+        
+            #TODO min or max problem??
             if parent_f[i] > f_opt:
                     f_opt = parent_f[i]
                     x_opt = parent[i].copy()
-            if f_opt >= problem.state.evaluations:
-                break
+
     return f_opt, x_opt
 
 def create_problem(fid: int):
@@ -95,15 +95,17 @@ def create_problem(fid: int):
 if __name__ == "__main__":
     # this how you run your algorithm with 20 repetitions/independent run
     F18, _logger = create_problem(18)
+    f18_list = []
     for run in range(20): 
         f_opt, x_opt = studentnumber1_studentnumber2_GA(F18)
-        print(f'The optimal values for the F18 prob are: {f_opt,x_opt}')
+        f18_list.append(f_opt)
         F18.reset() # it is necessary to reset the problem after each independent run
+    print(f'The average fitness for the F18 prob is: {sum(f18_list)/len(f18_list)}')
     _logger.close() # after all runs, it is necessary to close the logger to make sure all data are written to the folder
 
-    F19, _logger = create_problem(19)
-    for run in range(20): 
-        f_opt, x_opt = studentnumber1_studentnumber2_GA(F19)
-        print(f'The optimal values for the F19 prob are: {f_opt,x_opt}')
-        F19.reset()
-    _logger.close()
+    # F19, _logger = create_problem(19)
+    # for run in range(20): 
+    #     f_opt, x_opt = studentnumber1_studentnumber2_GA(F19)
+    #     print(f'The optimal values for the F19 prob are: {f_opt,x_opt}')
+    #     F19.reset()
+    # _logger.close()

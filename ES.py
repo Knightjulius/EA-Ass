@@ -11,55 +11,113 @@ dimension = 50
 # To make your results reproducible (not required by the assignment), you could set the random seed by
 # `np.random.seed(some integer, e.g., 42)`
 np.random.seed(2023)
-def labs_objective_function(x: np.ndarray) -> float:
-    autocorr = np.correlate(x, x, mode='full')
-    score = np.sum(np.abs(autocorr))  # Objective function score, adjust as needed
-    
-    return score
 
+def sig(x):
+    array = []
+    for each in x:
+        value = round(1/(1 + np.exp(-each)))
+        array.append(value)
+    return np.array(array)
 
-ioh.problem.wrap_real_problem(
-    labs_objective_function,                                     # Handle to the function
-    name="LABS",                               # Name to be used when instantiating
-    optimization_type=ioh.OptimizationType.MAX, # Specify that we want to max
-    lb=-5,                                               # The lower bound
-    ub=5,                                                # The upper bound
-)
+def recombination(parent,parent_sigma):
+    # choose 2 random parents, create the offspring and the corresponding sigma
+    [p1,p2] = np.random.choice(len(parent),2,replace = False)
+    offspring = (parent[p1] + parent[p2])/2
+    sigma = (parent_sigma[p1] + parent_sigma[p2])/2 
+
+    return offspring,sigma
+
+def mutation(parent, parent_sigma,tau, upperbound, lowerbound):
+    for i in range(len(parent)):
+        # this changes the sigma randomly
+        parent_sigma[i] = parent_sigma[i] * np.exp(np.random.normal(0,tau))
+        for j in range(len(parent[i])):
+            parent[i][j] = parent[i][j] + np.random.normal(0,parent_sigma[i])
+            parent[i][j] = parent[i][j] if parent[i][j] < upperbound else upperbound
+            parent[i][j] = parent[i][j] if parent[i][j] > lowerbound else lowerbound   
+
+def mating_selection(offspring, offspring_f, offspring_sigma,lambda_,mu_ ):
+    rank = np.argsort(offspring_f)
+    #print(offspring_f)
+    #print(rank)
+    parent = []
+    parent_sigma = []
+    parent_f = []
+    i = 0
+    while ((i < lambda_) & (len(parent) < mu_)):
+        if (rank[i] < mu_):
+            parent.append(offspring[i])
+            parent_f.append(offspring_f[i])
+            parent_sigma.append(offspring_sigma[i])
+        i = i + 1
+    return parent, parent_sigma, parent_f
 
 def studentnumber1_studentnumber2_ES(problem):
     # hint: F18 and F19 are Boolean problems. Consider how to present bitstrings as real-valued vectors in ES
     # initial_pop = ... make sure you randomly create the first population
-    pop_size = 1 # TODO: look at if this matters
+    
+    budget = 5000
+    
+    # Parameters setting
+    mu_ = 5
+    lambda_ = 10
+    tau =  1.0 / np.sqrt(problem.meta_data.n_variables) #equals the learning rate: this is a recommendation and probably doesnt need to be changed
+
+    pop_size = 5 # TODO: look at if this matters === mu_ in wg assignment, needs to be higher than 1 for recombinationm to work
     lowerbound = -5
     upperbound = 5
 
+    f_opt = 0
+    x_opt = None
+
     parent = []
+    parent_binary = []
     parent_sigma = []
     parent_f = []
     for i in range(pop_size):
         parent.append(np.random.uniform(low = lowerbound,high = upperbound, size = problem.meta_data.n_variables))
         parent_sigma.append(0.05 * (upperbound - lowerbound))
-        print(parent[i])
-    for i in range(pop_size):
-        parent_f.append(problem(parent[i]))
-
-    print(parent, parent_sigma, parent_f)
-    print(problem.meta_data.n_variables)
+        #print(parent[i])
+        parent_binary.append(sig(parent[i]))
+        parent_f.append(problem(parent_binary[i]))
+    #print(parent, parent_binary, parent_sigma, parent_f)
     
     # `problem.state.evaluations` counts the number of function evaluation automatically,
     # which is incremented by 1 whenever you call `problem(x)`.
     # You could also maintain a counter of function evaluations if you prefer.
-    #while problem.state.evaluations < budget:
-        #recombine
+    while problem.state.evaluations < budget:
 
-        #mutate
+        offspring = []
+        offspring_sigma = []
+        offspring_f = []
+        offspring_binary = []
 
-        #select
+        # Recombination
+        for i in range(lambda_):
+            o, s = recombination(parent,parent_sigma)
+            offspring.append(o)
+            offspring_sigma.append(s)
 
-        #evaluate
-        
-    # no return v 
+        # this changes the offspring not the parent
+        mutation(offspring,offspring_sigma,tau, upperbound, lowerbound)
+        # makes the offspring binary so it can be evaluated
+        for entry in offspring:
+            offspring_binary.append(sig(entry))
+        #print(f'len binary:{len(offspring_binary)}')
 
+        # Evaluation
+        for i in range(lambda_) : 
+            offspring_f.append(problem(offspring_binary[i]))
+            #print(offspring_f)
+            # TODO min or max problem?
+            if offspring_f[i] > f_opt:
+                    f_opt = offspring_f[i]
+                    # does it matte if this is non binary or binary?
+                    x_opt = offspring[i].copy()
+            #print(f_opt)
+        # selects and sets new parents
+        parent, parent_sigma, parent_f = mating_selection(offspring, offspring_f, offspring_sigma,lambda_,mu_)
+    return f_opt, x_opt
 
 def create_problem(fid: int):
     # Declaration of problems to be tested.
@@ -82,10 +140,12 @@ def create_problem(fid: int):
 if __name__ == "__main__":
     # this how you run your algorithm with 20 repetitions/independent run
     F18, _logger = create_problem(18)
+    f18_list = []
     for run in range(20): 
-        studentnumber1_studentnumber2_ES(F18)
+        f_opt, x_opt = studentnumber1_studentnumber2_ES(F18)
+        f18_list.append(f_opt)
         F18.reset() # it is necessary to reset the problem after each independent run
-        break
+    print(f'The average fitness for the F18 prob is: {sum(f18_list)/len(f18_list)}')
     _logger.close() # after all runs, it is necessary to close the logger to make sure all data are written to the folder
 
     # F19, _logger = create_problem(19)
