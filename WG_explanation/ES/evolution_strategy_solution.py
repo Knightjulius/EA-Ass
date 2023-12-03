@@ -75,7 +75,6 @@ def evolution_strategy(func, budget = None):
     # Initialization and Evaluation
     parent,parent_sigma = initialization(mu_,func.meta_data.n_variables)
     parent_f = []
-    print(parent,parent_sigma)
     for i in range(mu_):
         parent_f.append(func(parent[i]))
         budget = budget - 1

@@ -1,17 +1,17 @@
-def bitstring_to_real_vector(bitstring, section_length):
-    sections = [bitstring[i:i+section_length] for i in range(0, len(bitstring), section_length)]
-    real_values = []
-    
-    for section in sections:
-        # Convert binary to real number (simple example)
-        decimal_value = int(section, 2)
-        normalized_value = decimal_value / (2**section_length - 1)  # Normalize to range [0, 1]
-        real_values.append(normalized_value)
-    
-    return real_values
+parameters = [['IM', 'OSM'], ['KommaS', 'PlusS'], ['IR', 'DR', 'GIR', 'GDR']]
+for mutation_input in range(1,3):
+    for selection_input in range(1,3):
+        for recombination_input in range(1,5):
+            for initial_sigma in range(1,11):
+                for num_parents in range(2,21):
+                    for num_offspring in range(2,21):
+                        test = str(parameters[0][mutation_input-1]) + ' '+ str(parameters[1][selection_input-1]) + ' ' + str(parameters[2][recombination_input-1]) + ' ' + (f"IS:{initial_sigma/100}") + ' ' + (f"NP:{num_parents}") + ' ' + (f'NO:{num_offspring}')
+                        print(type(test))
+                        break
+                    break
+                break
+            break
+        break
+    break
 
-# Example usage:
-bitstring = '1101011010111010'
-section_length = 4
-real_vector = bitstring_to_real_vector(bitstring, section_length)
-print(real_vector)
+parameters = [['IM', 'OSM'], ['KommaS', 'PlusS'], ['IR', 'DR', 'GIR', 'GDR']]
