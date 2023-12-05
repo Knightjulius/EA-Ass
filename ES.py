@@ -232,7 +232,7 @@ def create_problem(fid: int, Fname: str):
     # `root` indicates where the output files are stored.
     # `folder_name` is the name of the folder containing all output. You should compress the folder 'run' and upload it to IOHanalyzer.
     l = logger.Analyzer(
-        root="ESdata",  # the working directory in which a folder named `folder_name` (the next argument) will be created to store data
+        root="ESF19data",  # the working directory in which a folder named `folder_name` (the next argument) will be created to store data
         folder_name="run",  # the folder name to which the raw performance data will be stored
         algorithm_name= Fname,  # name of your algorithm
         algorithm_info="Practical assignment of the EA course",
@@ -243,6 +243,30 @@ def create_problem(fid: int, Fname: str):
 
 
 if __name__ == "__main__":
+    # parameters = [['IM', 'OSM'], ['KommaS', 'PlusS'], ['IR', 'DR', 'GIR', 'GDR']]
+    # # this how you run your algorithm with 20 repetitions/independent run
+    # for mutation_input in range(1,3):
+    #     for selection_input in range(1,3):
+    #         for recombination_input in range(1,5):
+    #             for initial_sigma in [0.01, 0.05, 0.1]:
+    #                 for num_parents in [2, 5, 10, 20]:
+    #                     for num_offspring in [2,5, 10,20]:
+    #                         if num_offspring < num_parents:
+    #                             continue
+    #                         else:
+    #                             nameF18 = 'f18' + ' ' + str(parameters[0][mutation_input-1]) + ' '+ str(parameters[1][selection_input-1]) + ' ' + str(parameters[2][recombination_input-1]) + ' ' + (f"IS: {initial_sigma}") + ' ' + (f"NP: {num_parents}") + ' ' + (f'NO: {num_offspring}')
+    #                             F18, _logger = create_problem(18,nameF18)
+    #                             f18_list = []
+    #                             for run in range(20):
+    #                                 f_opt, x_opt = studentnumber1_studentnumber2_ES(F18,mutation_input, selection_input, recombination_input, initial_sigma, num_parents, num_offspring)
+    #                                 f18_list.append(f_opt)
+    #                                 F18.reset() # it is necessary to reset the problem after each independent run
+    #                             f = open("F18FitnessAverage.txt", "a")
+    #                             f.write(f"{nameF18}: {sum(f18_list)/len(f18_list)}\n")
+    #                             f.close()
+    #                             _logger.close() # after all runs, it is necessary to close the logger to make sure all data are written to the folder
+
+
     parameters = [['IM', 'OSM'], ['KommaS', 'PlusS'], ['IR', 'DR', 'GIR', 'GDR']]
     # this how you run your algorithm with 20 repetitions/independent run
     for mutation_input in range(1,3):
@@ -254,36 +278,18 @@ if __name__ == "__main__":
                             if num_offspring < num_parents:
                                 continue
                             else:
-                                nameF18 = 'f18' + ' ' + str(parameters[0][mutation_input-1]) + ' '+ str(parameters[1][selection_input-1]) + ' ' + str(parameters[2][recombination_input-1]) + ' ' + (f"IS: {initial_sigma}") + ' ' + (f"NP: {num_parents}") + ' ' + (f'NO: {num_offspring}')
-                                F18, _logger = create_problem(18,nameF18)
-                                f18_list = []
+                                nameF18 = 'f19' + ' ' + str(parameters[0][mutation_input-1]) + ' '+ str(parameters[1][selection_input-1]) + ' ' + str(parameters[2][recombination_input-1]) + ' ' + (f"IS: {initial_sigma}") + ' ' + (f"NP: {num_parents}") + ' ' + (f'NO: {num_offspring}')
+                                F19, _logger = create_problem(19,nameF18)
+                                f19_list = []
                                 for run in range(20):
-                                    f_opt, x_opt = studentnumber1_studentnumber2_ES(F18,mutation_input, selection_input, recombination_input, initial_sigma, num_parents, num_offspring)
-                                    f18_list.append(f_opt)
-                                    F18.reset() # it is necessary to reset the problem after each independent run
-                                f = open("F18FitnessAverage.txt", "a")
-                                f.write(f"{nameF18}: {sum(f18_list)/len(f18_list)}\n")
+                                    f_opt, x_opt = studentnumber1_studentnumber2_ES(F19,mutation_input, selection_input, recombination_input, initial_sigma, num_parents, num_offspring)
+                                    f19_list.append(f_opt)
+                                    F19.reset() # it is necessary to reset the problem after each independent run
+                                f = open("F19FitnessAverage.txt", "a")
+                                f.write(f"{nameF18}: {sum(f19_list)/len(f19_list)}\n")
                                 f.close()
                                 _logger.close() # after all runs, it is necessary to close the logger to make sure all data are written to the folder
 
-
-    # for mutation_input in range(1,3):
-    #     for selection_input in range(1,3):
-    #         for recombination_input in range(1,5):
-    #             for initial_sigma in range(1,101):
-    #                 for num_parents in range(2,51):
-    #                     for num_offspring in range(2,51):
-    #                         nameF19 = 'f19' + ' ' + str(parameters[0][mutation_input-1]) + ' '+ str(parameters[1][selection_input-1]) + ' ' + str(parameters[2][recombination_input-1]) + ' ' + (f"IS:{initial_sigma/100}") + ' ' + (f"NP:{num_parents}") + ' ' + (f'NO:{num_offspring}')
-    #                         F19, _logger = create_problem(18,nameF19)
-    #                         f19_list = []
-    #                         for run in range(20):
-    #                             f_opt, x_opt = studentnumber1_studentnumber2_ES(F19)
-    #                             f19_list.append(f_opt)
-    #                             F19.reset() # it is necessary to reset the problem after each independent run
-    #                         f = open("F19FitnessAverage.txt", "a")
-    #                         f.write(f"{nameF19}: {sum(f19_list)/len(f19_list)}")
-    #                         f.close()
-    #                         _logger.close() # after all runs, it is necessary to close the logger to make sure all data are written to the folder
     # F19, _logger = create_problem(19)
     # for run in range(20): 
     #     studentnumber1_studentnumber2_ES(F19)
