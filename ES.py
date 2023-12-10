@@ -21,16 +21,21 @@ def sig(x):
 
 def recombination(recombination_input, parents,parents_sigma, lambda_):
     if recombination_input == 1:
-        #intermediate combination
+        #intermediary combination
         # choose 2 random parents, create the offspring and the corresponding sigma
         offsprings = []
         offsprings_sigma = []
         for i in range(lambda_):
             [p1,p2] = np.random.choice(len(parents),2,replace = False)
+            new_sigma = []
             o = (parents[p1] + parents[p2])/2
-            s = (parents_sigma[p1] + parents_sigma[p2])/2
+            for j in range(len(parents_sigma)):
+                for k in range(dimension):
+                    new_sig = (parents_sigma[p1][k] + parents_sigma[p2][k])/2
+                    new_sigma.append(new_sig)
+            #s = (parents_sigma[p1] + parents_sigma[p2])/2
             offsprings.append(o)
-            offsprings_sigma.append(s)
+            offsprings_sigma.append(new_sigma)
 
 
     if recombination_input == 2:
@@ -56,19 +61,23 @@ def recombination(recombination_input, parents,parents_sigma, lambda_):
                     bit = parents[p2][j]
                     weightp2 += 1
                 offspring_bits.append(bit)
-            weighted_sigma = (parents_sigma[p1] * (weightp1/(weightp1 + weightp2))) + (parents_sigma[p2] * (weightp2/(weightp1 + weightp2)))
-            offsprings_sigma.append(weighted_sigma)
+            new_sigma = []
+            for k in range(dimension):
+                weighted_sigma = (parents_sigma[p1][k] * (weightp1/(weightp1 + weightp2))) + (parents_sigma[p2][k] * (weightp2/(weightp1 + weightp2)))
+                new_sigma.append(weighted_sigma)
+            offsprings_sigma.append(new_sigma)
             offsprings.append(offspring_bits)
 
 
     if recombination_input == 3:
-        # global intermediate recombination
+        # global intermediary recombination
         # calculates the mean for each bit and makes the new string that
         offsprings = []
         offsprings_sigma = []
         for i in range(lambda_):
             o = np.mean(parents,axis=0)
-            s = np.mean(parents_sigma)
+            new_sigma = []
+            s = np.mean(parents_sigma,axis=0)
             offsprings.append(o)
             offsprings_sigma.append(s)
 
@@ -90,11 +99,13 @@ def recombination(recombination_input, parents,parents_sigma, lambda_):
                 weightp[p1].append(1)
             
                 offspring_bits.append(bit)
-            weighted_sigma = 0
+            #weighted_sigma = 0
             for position in range(num_parents):
-                ws = (sum(weightp[position])/parent_length)*parents_sigma[position]
-                weighted_sigma += ws
-            offsprings_sigma.append(weighted_sigma)
+                new_sigma = [0 for _ in range(dimension)]
+                for k in range(dimension):
+                    ws = (sum(weightp[position])/parent_length)*parents_sigma[position][k]
+                    new_sigma[k] += ws
+            offsprings_sigma.append(new_sigma)
             offsprings.append(offspring_bits)
 
     return offsprings, offsprings_sigma
@@ -102,26 +113,24 @@ def recombination(recombination_input, parents,parents_sigma, lambda_):
 
 def mutation(mutation_input, parents, parents_sigma,tau, upperbound, lowerbound):
     if mutation_input == 1:
-        # set tauprime according to the recommendation of Schweffel
-        tau =  1.0 / np.sqrt(2*dimension)
-        tauprime = 1.0/np.sqrt(2*np.sqrt(dimension))
-        # Individual sigma mutation
+        # one sigma
+        # set taup according to the recommendation of Schweffel
         for i in range(len(parents)):
             # this changes the sigma randomly and applies it to it's unique individual
-            parents_sigma[i] = parents_sigma[i] * np.exp(tau*np.random.normal(0,1) + tauprime*np.random.normal(0,1))
+            parents_sigma[i] = parents_sigma[i] * np.exp(tau*np.random.normal(0,1))
             for j in range(len(parents[i])):
                 parents[i][j] = parents[i][j] + np.random.normal(0,1)*parents_sigma[i]
                 parents[i][j] = parents[i][j] if parents[i][j] < upperbound else upperbound
                 parents[i][j] = parents[i][j] if parents[i][j] > lowerbound else lowerbound
     if mutation_input == 2:
-        # one sigma mutation
-        # this changes the sigma randomly and applies it to all individuals, all individuals are still uniquely changed by the new standard sigma
-        # parent_sigma[0] does not matter since all sigma's are the same
-        parent_sig0 = parents_sigma[0] * np.exp(tau*np.random.normal(0,1))
-        parents_sigma = [parent_sig0 for parent_sig in parents_sigma]
+        tau =  1.0 / np.sqrt(2*dimension)
+        tauprime = 1.0/np.sqrt(2*np.sqrt(dimension))
+        # individual sigma
+        # set tauprime according to the recommendation of Schweffel
         for i in range(len(parents)):
             for j in range(len(parents[i])):
-                parents[i][j] = parents[i][j] + np.random.normal(0,parents_sigma[i])
+                #adds each sigma beloning to each bit to the value
+                parents[i][j] = parents[i][j] + np.random.normal(0,parents_sigma[i][j] * (np.exp(tau*np.random.normal(0,1) + tauprime*np.random.normal(0,1))))
                 parents[i][j] = parents[i][j] if parents[i][j] < upperbound else upperbound
                 parents[i][j] = parents[i][j] if parents[i][j] > lowerbound else lowerbound
     return parents, parents_sigma
@@ -131,14 +140,17 @@ def mating_selection(selection_input,offsprings, offsprings_f, offsprings_sigma,
     # Komma mating selection
     # Ranks the offspring according to the best found fitness
     if selection_input == 1:
-        ranks = np.argsort(offsprings_f)
+        indices = np.argsort(offsprings_f)[::-1]
+        ranks = np.empty_like(indices)
+        ranks[indices] = np.arange(len(offsprings_f))
+        #ranks = np.argsort(offsprings_f)
         parents = []
         parents_sigma = []
         parents_f = []
         i = 0
         # selects only the best offspring according to the fitness
         # in range for the number of parents desired
-        while ((i < lambda_) & (len(parents) < mu_)):
+        for i in range(mu_):
             if (ranks[i] < mu_):
                 parents.append(offsprings[i])
                 parents_f.append(offsprings_f[i])
@@ -151,7 +163,12 @@ def mating_selection(selection_input,offsprings, offsprings_f, offsprings_sigma,
         combination_f = offsprings_f + parents_f
         combination = offsprings + parents
         combination_sigma  = offsprings_sigma + parents_sigma
-        ranks = np.argsort(combination_f)
+
+        indices = np.argsort(combination_f)[::-1]
+        ranks = np.empty_like(indices)
+        ranks[indices] = np.arange(len(combination_f))
+
+        #ranks = np.argsort(combination_f)
         parents = []
         parents_sigma = []
         parents_f = []
@@ -166,9 +183,10 @@ def mating_selection(selection_input,offsprings, offsprings_f, offsprings_sigma,
     return parents, parents_sigma, parents_f
 
 def studentnumber1_studentnumber2_ES(problem,mutation_input, selection_input, recombination_input, initial_sigma, num_parents, num_offspring):
-    # hint: F18 and F19 are Boolean problems. Consider how to present bitstrings as real-valued vectors in ES
-    # initial_pop = ... make sure you randomly create the first population
-    
+    mutation_input = 2
+    selection_input = 2
+    recombination_input = 4
+
     budget = 5000
     
     # Parameters setting
@@ -200,10 +218,12 @@ def studentnumber1_studentnumber2_ES(problem,mutation_input, selection_input, re
     for i in range(mu_):
         parents.append(np.random.uniform(low = lowerbound,high = upperbound, size = problem.meta_data.n_variables))
         # Sigma is initialized according to normal distributed standard deviation
-        parents_sigma.append(initial_sig * (upperbound - lowerbound))
+        if mutation_input == 1:
+            parents_sigma.append(initial_sig * (upperbound - lowerbound))
+        else:
+            parents_sigma.append([(initial_sig * (upperbound - lowerbound)) for _ in range(dimension)])
         parents_binary.append(sig(parents[i]))
         parents_f.append(problem(parents_binary[i]))
-
     # `problem.state.evaluations` counts the number of function evaluation automatically,
     # which is incremented by 1 whenever you call `problem(x)`.
     # You could also maintain a counter of function evaluations if you prefer.
@@ -266,7 +286,7 @@ if __name__ == "__main__":
                                     f_opt, x_opt = studentnumber1_studentnumber2_ES(F18,mutation_input, selection_input, recombination_input, initial_sigma, num_parents, num_offspring)
                                     f18_list.append(f_opt)
                                     F18.reset() # it is necessary to reset the problem after each independent run
-                                f = open("F18FitnessAverageFinal.txt", "a")
+                                f = open("F18FitnessAverageFinal2.txt", "a")
                                 f.write(f"{nameF18}: {sum(f18_list)/len(f18_list)}\n")
                                 f.close()
                                 _logger.close() # after all runs, it is necessary to close the logger to make sure all data are written to the folder
@@ -290,7 +310,7 @@ if __name__ == "__main__":
                                     f_opt, x_opt = studentnumber1_studentnumber2_ES(F19,mutation_input, selection_input, recombination_input, initial_sigma, num_parents, num_offspring)
                                     f19_list.append(f_opt)
                                     F19.reset() # it is necessary to reset the problem after each independent run
-                                f = open("F19FitnessAverageFinal.txt", "a")
+                                f = open("F19FitnessAverageFinal2.txt", "a")
                                 f.write(f"{nameF18}: {sum(f19_list)/len(f19_list)}\n")
                                 f.close()
                                 _logger.close() # after all runs, it is necessary to close the logger to make sure all data are written to the folder
