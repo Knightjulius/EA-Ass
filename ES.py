@@ -29,13 +29,14 @@ def recombination(recombination_input, parents,parents_sigma, lambda_):
             [p1,p2] = np.random.choice(len(parents),2,replace = False)
             new_sigma = []
             o = (parents[p1] + parents[p2])/2
-            for j in range(len(parents_sigma)):
-                for k in range(dimension):
-                    new_sig = (parents_sigma[p1][k] + parents_sigma[p2][k])/2
-                    new_sigma.append(new_sig)
+            #for j in range(len(parents_sigma)):
+                # for k in range(len(parents_sigma[0])):
+                #     new_sig = (parents_sigma[p1][k] + parents_sigma[p2][k])/2
+                #     new_sigma.append(new_sig)
+            offsprings_sigma.append(np.divide(np.add(parents_sigma[p1], parents_sigma[p2]),2))
             #s = (parents_sigma[p1] + parents_sigma[p2])/2
             offsprings.append(o)
-            offsprings_sigma.append(new_sigma)
+            #offsprings_sigma.append(new_sigma)
 
 
     if recombination_input == 2:
@@ -62,7 +63,7 @@ def recombination(recombination_input, parents,parents_sigma, lambda_):
                     weightp2 += 1
                 offspring_bits.append(bit)
             new_sigma = []
-            for k in range(dimension):
+            for k in range(len(parents_sigma[0])):
                 weighted_sigma = (parents_sigma[p1][k] * (weightp1/(weightp1 + weightp2))) + (parents_sigma[p2][k] * (weightp2/(weightp1 + weightp2)))
                 new_sigma.append(weighted_sigma)
             offsprings_sigma.append(new_sigma)
@@ -102,7 +103,7 @@ def recombination(recombination_input, parents,parents_sigma, lambda_):
             #weighted_sigma = 0
             for position in range(num_parents):
                 new_sigma = [0 for _ in range(dimension)]
-                for k in range(dimension):
+                for k in range(len(parents_sigma[0])):
                     ws = (sum(weightp[position])/parent_length)*parents_sigma[position][k]
                     new_sigma[k] += ws
             offsprings_sigma.append(new_sigma)
@@ -117,7 +118,7 @@ def mutation(mutation_input, parents, parents_sigma,tau, upperbound, lowerbound)
         # set taup according to the recommendation of Schweffel
         for i in range(len(parents)):
             # this changes the sigma randomly and applies it to it's unique individual
-            parents_sigma[i] = parents_sigma[i] * np.exp(tau*np.random.normal(0,1))
+            parents_sigma[i][0] = parents_sigma[i] * np.exp(tau*np.random.normal(0,1))
             for j in range(len(parents[i])):
                 parents[i][j] = parents[i][j] + np.random.normal(0,1)*parents_sigma[i]
                 parents[i][j] = parents[i][j] if parents[i][j] < upperbound else upperbound
@@ -129,6 +130,8 @@ def mutation(mutation_input, parents, parents_sigma,tau, upperbound, lowerbound)
         # set tauprime according to the recommendation of Schweffel
         for i in range(len(parents)):
             for j in range(len(parents[i])):
+                print(parents_sigma[i])
+                print(parents_sigma[i][j])
                 #adds each sigma beloning to each bit to the value
                 parents[i][j] = parents[i][j] + np.random.normal(0,parents_sigma[i][j] * (np.exp(tau*np.random.normal(0,1) + tauprime*np.random.normal(0,1))))
                 parents[i][j] = parents[i][j] if parents[i][j] < upperbound else upperbound
@@ -184,8 +187,8 @@ def mating_selection(selection_input,offsprings, offsprings_f, offsprings_sigma,
 
 def studentnumber1_studentnumber2_ES(problem,mutation_input, selection_input, recombination_input, initial_sigma, num_parents, num_offspring):
     mutation_input = 2
-    selection_input = 2
-    recombination_input = 4
+    selection_input = 1
+    recombination_input = 1
 
     budget = 5000
     
@@ -219,9 +222,9 @@ def studentnumber1_studentnumber2_ES(problem,mutation_input, selection_input, re
         parents.append(np.random.uniform(low = lowerbound,high = upperbound, size = problem.meta_data.n_variables))
         # Sigma is initialized according to normal distributed standard deviation
         if mutation_input == 1:
-            parents_sigma.append(initial_sig * (upperbound - lowerbound))
+            parents_sigma.append([np.random.randint(1,10)])
         else:
-            parents_sigma.append([(initial_sig * (upperbound - lowerbound)) for _ in range(dimension)])
+            parents_sigma.append(np.random.normal(1,1,size=dimension))
         parents_binary.append(sig(parents[i]))
         parents_f.append(problem(parents_binary[i]))
     # `problem.state.evaluations` counts the number of function evaluation automatically,
@@ -235,6 +238,7 @@ def studentnumber1_studentnumber2_ES(problem,mutation_input, selection_input, re
         offsprings, offsprings_sigma = recombination(recombination_input, parents,parents_sigma, lambda_)
         # mutate the offspring
         offsprings, offsprings_sigma = mutation(mutation_input,offsprings,offsprings_sigma,tau, upperbound, lowerbound)
+        print(offsprings_sigma)
         # makes the offspring binary so it can be evaluated
         for entry in offsprings:
             offsprings_binary.append(sig(entry))
@@ -247,6 +251,7 @@ def studentnumber1_studentnumber2_ES(problem,mutation_input, selection_input, re
                     x_opt = offsprings[i].copy()
         # selects and sets new parents
         parents, parents_sigma, parents_f = mating_selection(selection_input, offsprings, offsprings_f, offsprings_sigma, parents, parents_sigma, parents_f,lambda_,mu_)
+    exit()
     return f_opt, x_opt
 
 def create_problem(fid: int, Fname: str, Folname:str):
@@ -280,7 +285,7 @@ if __name__ == "__main__":
                                 continue
                             else:
                                 nameF18 = 'f18' + ' ' + str(parameters[0][mutation_input-1]) + ' '+ str(parameters[1][selection_input-1]) + ' ' + str(parameters[2][recombination_input-1]) + ' ' + (f"IS: {initial_sigma}") + ' ' + (f"NP: {num_parents}") + ' ' + (f'NO: {num_offspring}')
-                                F18, _logger = create_problem(18,nameF18,'ESF18Final')
+                                F18, _logger = create_problem(18,nameF18,'ESF18Final2')
                                 f18_list = []
                                 for run in range(20):
                                     f_opt, x_opt = studentnumber1_studentnumber2_ES(F18,mutation_input, selection_input, recombination_input, initial_sigma, num_parents, num_offspring)
