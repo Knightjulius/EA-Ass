@@ -77,7 +77,6 @@ def recombination(recombination_input, parents,parents_sigma, lambda_):
         offsprings_sigma = []
         for i in range(lambda_):
             o = np.mean(parents,axis=0)
-            new_sigma = []
             s = np.mean(parents_sigma,axis=0)
             offsprings.append(o)
             offsprings_sigma.append(s)
@@ -101,14 +100,13 @@ def recombination(recombination_input, parents,parents_sigma, lambda_):
             
                 offspring_bits.append(bit)
             #weighted_sigma = 0
-            for position in range(num_parents):
-                new_sigma = [0 for _ in range(dimension)]
-                for k in range(len(parents_sigma[0])):
+            new_sigma = [0 for _ in range(len(parents_sigma[0]))]
+            for k in range(len(parents_sigma[0])):
+                for position in range(num_parents):
                     ws = (sum(weightp[position])/parent_length)*parents_sigma[position][k]
                     new_sigma[k] += ws
             offsprings_sigma.append(new_sigma)
             offsprings.append(offspring_bits)
-
     return offsprings, offsprings_sigma
 
 
@@ -118,9 +116,9 @@ def mutation(mutation_input, parents, parents_sigma,tau, upperbound, lowerbound)
         # set taup according to the recommendation of Schweffel
         for i in range(len(parents)):
             # this changes the sigma randomly and applies it to it's unique individual
-            parents_sigma[i][0] = parents_sigma[i] * np.exp(tau*np.random.normal(0,1))
+            parents_sigma[i][0] = parents_sigma[i][0] * np.exp(tau*np.random.normal(0,1))
             for j in range(len(parents[i])):
-                parents[i][j] = parents[i][j] + np.random.normal(0,1)*parents_sigma[i]
+                parents[i][j] = parents[i][j] + np.random.normal(0,1)*parents_sigma[i][0]
                 parents[i][j] = parents[i][j] if parents[i][j] < upperbound else upperbound
                 parents[i][j] = parents[i][j] if parents[i][j] > lowerbound else lowerbound
     if mutation_input == 2:
@@ -130,10 +128,9 @@ def mutation(mutation_input, parents, parents_sigma,tau, upperbound, lowerbound)
         # set tauprime according to the recommendation of Schweffel
         for i in range(len(parents)):
             for j in range(len(parents[i])):
-                print(parents_sigma[i])
-                print(parents_sigma[i][j])
+                parents_sigma[i][j] = parents_sigma[i][j] * np.exp(tau*np.random.normal(0,1) + tauprime*np.random.normal(0,1))
                 #adds each sigma beloning to each bit to the value
-                parents[i][j] = parents[i][j] + np.random.normal(0,parents_sigma[i][j] * (np.exp(tau*np.random.normal(0,1) + tauprime*np.random.normal(0,1))))
+                parents[i][j] = parents[i][j] + (parents_sigma[i][j] * np.random.normal(0,1))
                 parents[i][j] = parents[i][j] if parents[i][j] < upperbound else upperbound
                 parents[i][j] = parents[i][j] if parents[i][j] > lowerbound else lowerbound
     return parents, parents_sigma
@@ -188,7 +185,7 @@ def mating_selection(selection_input,offsprings, offsprings_f, offsprings_sigma,
 def studentnumber1_studentnumber2_ES(problem,mutation_input, selection_input, recombination_input, initial_sigma, num_parents, num_offspring):
     mutation_input = 2
     selection_input = 1
-    recombination_input = 1
+    recombination_input = 4
 
     budget = 5000
     
@@ -222,11 +219,12 @@ def studentnumber1_studentnumber2_ES(problem,mutation_input, selection_input, re
         parents.append(np.random.uniform(low = lowerbound,high = upperbound, size = problem.meta_data.n_variables))
         # Sigma is initialized according to normal distributed standard deviation
         if mutation_input == 1:
-            parents_sigma.append([np.random.randint(1,10)])
+            parents_sigma.append([initial_sig*(upperbound-lowerbound)])
         else:
-            parents_sigma.append(np.random.normal(1,1,size=dimension))
+            parents_sigma.append([initial_sig*(upperbound-lowerbound) for _ in range(dimension)])
         parents_binary.append(sig(parents[i]))
         parents_f.append(problem(parents_binary[i]))
+
     # `problem.state.evaluations` counts the number of function evaluation automatically,
     # which is incremented by 1 whenever you call `problem(x)`.
     # You could also maintain a counter of function evaluations if you prefer.
@@ -238,12 +236,11 @@ def studentnumber1_studentnumber2_ES(problem,mutation_input, selection_input, re
         offsprings, offsprings_sigma = recombination(recombination_input, parents,parents_sigma, lambda_)
         # mutate the offspring
         offsprings, offsprings_sigma = mutation(mutation_input,offsprings,offsprings_sigma,tau, upperbound, lowerbound)
-        print(offsprings_sigma)
+
         # makes the offspring binary so it can be evaluated
         for entry in offsprings:
             offsprings_binary.append(sig(entry))
         # Evaluation
-        
         offsprings_f = problem(offsprings_binary)
         for i in range(lambda_):
             if offsprings_f[i] > f_opt:
@@ -251,7 +248,6 @@ def studentnumber1_studentnumber2_ES(problem,mutation_input, selection_input, re
                     x_opt = offsprings[i].copy()
         # selects and sets new parents
         parents, parents_sigma, parents_f = mating_selection(selection_input, offsprings, offsprings_f, offsprings_sigma, parents, parents_sigma, parents_f,lambda_,mu_)
-    exit()
     return f_opt, x_opt
 
 def create_problem(fid: int, Fname: str, Folname:str):
@@ -291,6 +287,8 @@ if __name__ == "__main__":
                                     f_opt, x_opt = studentnumber1_studentnumber2_ES(F18,mutation_input, selection_input, recombination_input, initial_sigma, num_parents, num_offspring)
                                     f18_list.append(f_opt)
                                     F18.reset() # it is necessary to reset the problem after each independent run
+                                    print(f18_list)
+                                    exit()
                                 f = open("F18FitnessAverageFinal2.txt", "a")
                                 f.write(f"{nameF18}: {sum(f18_list)/len(f18_list)}\n")
                                 f.close()

@@ -38,12 +38,14 @@ def initialization(mu,dimension,lowerbound = -5.0, upperbound = 5.0):
     for i in range(mu):
         parent.append(np.random.uniform(low = lowerbound,high = upperbound, size = dimension))
         parent_sigma.append(0.05 * (upperbound - lowerbound))
+    print(parent_sigma)
     return parent,parent_sigma
 
 # One-sigma mutation
 def mutation(parent, parent_sigma,tau):
     for i in range(len(parent)):
         parent_sigma[i] = parent_sigma[i] * np.exp(np.random.normal(0,tau))
+        print(parent_sigma)
         for j in range(len(parent[i])):
             parent[i][j] = parent[i][j] + np.random.normal(0,parent_sigma[i])
             parent[i][j] = parent[i][j] if parent[i][j] < 5.0 else 5.0
@@ -122,7 +124,6 @@ def evolution_strategy(func, budget = None):
         
     # ioh function, to reset the recording status of the function.
     func.reset()
-    print(f_opt,x_opt)
     return f_opt, x_opt
 
 def main():
