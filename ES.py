@@ -2,12 +2,10 @@ import numpy as np
 from ioh import get_problem, logger, ProblemClass
 import ioh
 
-budget = 5000
 dimension = 50
 
 # To make your results reproducible (not required by the assignment), you could set the random seed by
 # `np.random.seed(some integer, e.g., 42)`
-np.random.seed(2023)
 
 def sig(x):
     # takes an array of real values and used the sigmoid function to map the real values to a binary representation
@@ -260,59 +258,30 @@ def create_problem(fid: int, Fname: str, Folname:str):
 
 
 if __name__ == "__main__":
-    # parameters = [['OSM', 'IM'], ['KommaS', 'PlusS'], ['IR', 'DR', 'GIR', 'GDR']]
-    # # this how you run your algorithm with 20 repetitions/independent run
-    # for mutation_input in range(1,3):
-    #     for selection_input in range(1,3):
-    #         for recombination_input in range(1,5):
-    #             for initial_sigma in [0.1]:
-    #                 for num_parents in [2,4,6,8,10,12,14]:
-    #                     for num_offspring in [14, 28, 42, 56, 70, 84, 98]:
-    #                         if num_offspring / num_parents != 7.0:
-    #                             continue
-    #                         else:
-    #                             nameF18 = 'f18' + ' ' + str(parameters[0][mutation_input-1]) + ' '+ str(parameters[1][selection_input-1]) + ' ' + str(parameters[2][recombination_input-1]) + ' ' + (f"IS: {initial_sigma}") + ' ' + (f"NP: {num_parents}") + ' ' + (f'NO: {num_offspring}')
-    #                             F18, _logger = create_problem(18,nameF18,'ESF18Final2.1')
-    #                             f18_list = []
-    #                             np.random.seed(2023)
-    #                             for run in range(20):
-    #                                 f_opt, x_opt = studentnumber1_studentnumber2_ES(F18,mutation_input, selection_input, recombination_input, initial_sigma, num_parents, num_offspring)
-    #                                 f18_list.append(f_opt)
-    #                                 F18.reset() # it is necessary to reset the problem after each independent run
-    #                             f = open("F18FitnessAverageFinal2.1.txt", "a")
-    #                             f.write(f"{nameF18}: {sum(f18_list)/len(f18_list)} {max(f18_list)}\n")
-    #                             f.close()
-    #                             _logger.close() # after all runs, it is necessary to close the logger to make sure all data are written to the folder
+    F18, _logger = create_problem(18, 'F18ES', 'F18ES')
+    Average_list = []
+    np.random.seed(2023)
+    for run in range(20):
+        # The parameters in the function correspond to Individual Sigma mutation,
+        # Plus Selection, Discrete Recombination, an initial sigma of 0.1, mu of 8 and lambda of 56
+        f_opt, x_opt = s3663841_s2960710_ES(F18, 2,2,2,0.1,8,56)
+        Average_list.append(f_opt)
+        F18.reset()
+    _logger.close()
+    print(sum(Average_list)/len(Average_list))
 
 
-    parameters = [['OSM', 'IM'], ['KommaS', 'PlusS'], ['IR', 'DR', 'GIR', 'GDR']]
-    # this how you run your algorithm with 20 repetitions/independent run
-    for mutation_input in range(1,3):
-        for selection_input in range(1,3):
-            for recombination_input in range(1,5):
-                for initial_sigma in [0.1]:
-                    for num_parents in [2,4,6,8,10,12,14]:
-                        for num_offspring in [14, 28, 42, 56, 70, 84, 98]:
-                            if num_offspring / num_parents != 7.0:
-                                continue
-                            else:
-                                nameF18 = 'f19' + ' ' + str(parameters[0][mutation_input-1]) + ' '+ str(parameters[1][selection_input-1]) + ' ' + str(parameters[2][recombination_input-1]) + ' ' + (f"IS: {initial_sigma}") + ' ' + (f"NP: {num_parents}") + ' ' + (f'NO: {num_offspring}')
-                                F18, _logger = create_problem(19,nameF18,'ESF19Final2.1')
-                                f18_list = []
-                                np.random.seed(2023)
-                                for run in range(20):
-                                    f_opt, x_opt = s3663841_s2960710_ES(F18,mutation_input, selection_input, recombination_input, initial_sigma, num_parents, num_offspring)
-                                    f18_list.append(f_opt)
-                                    F18.reset() # it is necessary to reset the problem after each independent run
-                                f = open("F19FitnessAverageFinal2.1.txt", "a")
-                                f.write(f"{nameF18}: {sum(f18_list)/len(f18_list)} {max(f18_list)}\n")
-                                f.close()
-                                _logger.close() # after all runs, it is necessary to close the logger to make sure all data are written to the folder
 
-    # F19, _logger = create_problem(19)
-    # for run in range(20): 
-    #     studentnumber1_studentnumber2_ES(F19)
-    #     F19.reset()
-    # _logger.close()
+    F19, _logger = create_problem(19, 'F19ES', 'F19ES')
+    Average_list = []
+    np.random.seed(2023)
+    for run in range(20):
+        # The parameters in the function correspond to Individual Sigma mutation,
+        # Plus Selection, Discrete Recombination, an initial sigma of 0.1, mu of 14 and lambda of 98 
+        f_opt, x_opt = s3663841_s2960710_ES(F19, 2,2,2,0.1,14,98)
+        Average_list.append(f_opt)
+        F19.reset()
+    _logger.close()
+    print(sum(Average_list)/len(Average_list))
 
 
